@@ -439,12 +439,12 @@ class LinkageTree(BaseTree):
     distance matrix first and is thus not ideal for extremely large data sets.
     """
 
-    def __init__(self, dists_fun, dists_options):
+    def __init__(self, dists_fun=None, dists_options={}):
         super().__init__()
         self.dists_fun = dists_fun
         self.dists_options = dists_options
 
-    def fit(self, series):
+    def fit(self, series, dists=None):
         self.series = SeriesContainer.wrap(series)
         try:
             from scipy.cluster.hierarchy import linkage
@@ -453,7 +453,10 @@ class LinkageTree(BaseTree):
             self.linkage = None
             linkage = None
             return
-        dists = self.dists_fun(self.series, **self.dists_options)
+        if dists is None:
+            dists = self.dists_fun(self.series, **self.dists_options)
+        else:
+            dists = dists
         dists_cond = np.zeros(self._size_cond(len(series)))
         idx = 0
         for r in range(len(series) - 1):
