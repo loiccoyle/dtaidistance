@@ -160,7 +160,7 @@ class BaseTree:
              bottom_margin=2, top_margin=2, ts_left_margin=0, ts_sample_length=1,
              tr_label_margin=3, tr_left_margin=2, ts_label_margin=0,
              show_ts_label=None, show_tr_label=None,
-             cmap='viridis_r', ts_color=None):
+             cmap='viridis_r', ts_color=None, **kwargs):
         """Plot the hierarchy and time series.
 
         :param filename: If a filename is passed, the image is written to this file.
@@ -322,7 +322,7 @@ class BaseTree:
                     curcolor = None
                 ax[1].plot(ts_left_margin + ts_sample_length * np.arange(len(serie)),
                            bottom_margin + ts_height * cnt_ts + self.ts_height_factor * serie,
-                           color=curcolor)
+                           color=curcolor, **kwargs)
                 cnt_ts += 1
 
             else:
