@@ -10,7 +10,7 @@ Citing this work: [![DOI](https://zenodo.org/badge/80764246.svg)](https://zenodo
 
 ## Installation
 
-This packages is available on PyPI:
+This packages is available on PyPI (requires Python 3):
 
     $ pip install dtaidistance
 
@@ -170,8 +170,10 @@ wrapper for the SciPy linkage method).
     from dtaidistance import clustering
     # Custom Hierarchical clustering
     model1 = clustering.Hierarchical(dtw.distance_matrix_fast, {})
+    cluster_idx = model1.fit(series)
     # Augment Hierarchical object to keep track of the full tree
     model2 = clustering.HierarchicalTree(model1)
+    cluster_idx = model2.fit(series)
     # SciPy linkage clustering
     model3 = clustering.LinkageTree(dtw.distance_matrix_fast, {})
     cluster_idx = model3.fit(series)
@@ -191,11 +193,13 @@ tree can be visualised:
 - [Numpy](http://www.numpy.org)
 
 Optional:
+
 - [Cython](http://cython.org)
 - [tqdm](https://github.com/tqdm/tqdm)
 - [matplotlib](https://matplotlib.org)
 
 Development:
+
 - [pytest](http://doc.pytest.org)
 - [pytest-benchmark](http://pytest-benchmark.readthedocs.io)
 
@@ -203,7 +207,7 @@ Development:
 ## Contact
 
 - [Wannes Meert](https://people.cs.kuleuven.be/wannes.meert)  
-  [Wannes.Meert@cs.kuleuven.be](mailto:Wannes.Meert@cs.kuleuven.be)
+  <[Wannes.Meert@cs.kuleuven.be](mailto:Wannes.Meert@cs.kuleuven.be)>
 
 
 ## References
@@ -231,7 +235,7 @@ Development:
 
     DTAI distance code.
 
-    Copyright 2016-2018 KU Leuven, DTAI Research Group
+    Copyright 2016-2019 KU Leuven, DTAI Research Group
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
