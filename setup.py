@@ -42,36 +42,6 @@ l_args = {
 }
 
 
-class MySDistCommand(SDistCommand):
-    def run(self):
-        PrepReadme.run_pandoc()
-        super().run()
-
-
-class PrepReadme(Command):
-    description = "Translate readme from Markdown to ReStructuredText"
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        PrepReadme.run_pandoc()
-
-    @staticmethod
-    def run_pandoc():
-        import subprocess as sp
-        print("running pandoc")
-        try:
-            sp.call(['pandoc', '--from=markdown', '--to=rst', '--output=README', 'README.md'])
-        except sp.CalledProcessError as err:
-            print("Pandoc failed, Markdown format will be used.")
-            print(err)
-
-
 class PyTest(TestCommand):
     description = "Run tests"
     user_options = [('pytest-args=', 'a', "Arguments to pass into py.test")]
@@ -175,9 +145,16 @@ class MyBuildExtCommand(BuildExtCommand):
         c = self.compiler.compiler_type
         print("Compiler type: {}".format(c))
         print("--noopenmp: {}".format(self.distribution.noopenmp))
-        if self.distribution.noopenmp == 0 and not check_openmp(self.compiler.compiler[0]):
-            print("WARNING: OpenMP is not available, disabling OpenMP (no parallel computing in C)")
-            self.distribution.noopenmp = 1
+        if self.distribution.noopenmp == 0:
+            try:
+                check_result = check_openmp(self.compiler.compiler[0])
+            except Exception as exc:
+                print("WARNING: Cannot check for OpenMP, assuming to be available")
+                print(exc)
+                check_result = True  # Assume to be present by default
+            if not check_result:
+                print("WARNING: OpenMP is not available, disabling OpenMP (no parallel computing in C)")
+                self.distribution.noopenmp = 1
         if c in c_args:
             if self.distribution.noopenmp == 1:
                 args = [arg for arg in c_args[c] if "openmp" not in arg]
@@ -235,14 +212,13 @@ def check_openmp(cc_bin):
             print("... no OpenMP")
             return False
     else:
-        print("... do not know how to check for OpenMP (unknown CC)")
+        print("... do not know how to check for OpenMP (unknown CC), assume to be available")
         return True
     return False
 
 
 # Set up extension
 if cythonize is not None and numpy is not None:
-    print("create ext modules")
     ext_modules = cythonize([
         Extension(
             "dtaidistance.dtw_c", ["dtaidistance/dtw_c.pyx"],
@@ -267,18 +243,13 @@ if not version:
     raise RuntimeError('Cannot find version information')
 
 # Set up readme file
-readme_path = os.path.join(here, 'README')
-if not os.path.exists(readme_path):
-    try:
-        PrepReadme.run_pandoc()
-    except Exception:
-        pass
+readme_path = os.path.join(here, 'README.md')
 if os.path.exists(readme_path):
     with open(readme_path, 'r', encoding='utf-8') as f:
         long_description = f.read()
 else:
-    with open(os.path.join(here, 'README.md'), 'r', encoding='utf-8') as f:
-        long_description = f.read()
+    long_description = ""
+long_description_content_type = "text/markdown"
 
 # Create setup
 setup(
@@ -286,6 +257,7 @@ setup(
     version=version,
     description='Distance measures for time series',
     long_description=long_description,
+    long_description_content_type=long_description_content_type,
     author='Wannes Meert',
     author_email='wannes.meert@cs.kuleuven.be',
     url='https://dtai.cs.kuleuven.be',
@@ -294,6 +266,7 @@ setup(
         'DTAIDistance source': 'https://github.com/wannesm/dtaidistance'
     },
     packages=["dtaidistance"],
+    python_requires='>=3.5',
     install_requires=install_requires,
     tests_require=tests_require,
     extras_require={
@@ -306,8 +279,6 @@ setup(
     distclass=MyDistribution,
     cmdclass={
         'test': PyTest,
-        'readme': PrepReadme,
-        'sdist': MySDistCommand,
         'buildinplace': MyBuildExtInPlaceCommand,
         'build_ext': MyBuildExtCommand,
         'install': MyInstallCommand

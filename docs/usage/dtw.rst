@@ -55,21 +55,40 @@ Check the ``__doc__`` for information about the available arguments:
 
     print(dtw.distance.__doc__)
 
-A number of options are foreseen to early stop some paths the dynamic
-programming algorithm is exploring or tune the distance measure
-computation:
+
+DTW Complexity and Early-Stopping
+"""""""""""""""""""""""""""""""""
+
+The ``distance`` function has linear space complexity but quadratic
+time complexity. To reduce the time complexity a number of options
+are available. The most used appraoch accros DTW implementations is
+to use a window that indicates the maximal shift that is allowed.
+This reduces the complexity to the product of window size and series length:
 
 -  ``window``: Only allow for shifts up to this amount away from the two
    diagonals.
+
+A number of other options are foreseen to early stop some or all paths the
+dynamic programming algorithm is exploring:
+
 -  ``max_dist``: Stop if the returned distance measure will be larger
    than this value.
 -  ``max_step``: Do not allow steps larger than this value.
 -  ``max_length_diff``: Return infinity if difference in length of two
    series is larger.
+
+
+DTW Tuning
+""""""""""
+
+A number of options are foreseen to tune how the cost is computed:
+
 -  ``penalty``: Penalty to add if compression or expansion is applied
    (on top of the distance).
 -  ``psi``: Psi relaxation to ignore begin and/or end of sequences (for
    cylical sequencies) [2].
+
+
 
 DTW and keep all warping paths
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,11 +131,13 @@ DTW between set of series
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To compute the DTW distance measures between all sequences in a list of
-sequences, use the method ``dtw.distance_matrix``. You can set variables
-to use more or less c code (``use_c`` and ``use_nogil``) and parallel or
-serial execution (``parallel``).
+sequences, use the method ``dtw.distance_matrix``. You can speed up the
+computation by using the ``dtw.distance_matrix_fact`` method that tries
+to run all algorithms in C. Also parallelization can be activated using
+the ``parallel`` argument.
 
-The ``distance_matrix`` method expects a list of lists/arrays:
+The ``distance_matrix`` and ``distance_matrix_fast`` methods expect a
+list of lists/arrays:
 
 ::
 
@@ -139,6 +160,13 @@ or a matrix (in case all series have the same length):
         [0.0, 1, 2, 0, 0, 0, 0, 0, 0],
         [0.0, 0, 1, 2, 1, 0, 0, 0, 0]])
     ds = dtw.distance_matrix_fast(series)
+
+The result is stored in a matrix representation. Since only the upper
+triangular matrix is required this representation more memory then necessary.
+This behaviour can be deactivated by setting the argument ``compact`` to
+true. The method will then return a 1-dimensional array with all results.
+This array represents the concatenation of all upper triangular rows.
+
 
 DTW between set of series, limited to block
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -171,6 +199,29 @@ The output in this case will be:
      [ inf   inf  inf     inf  1.4142  inf]    # 3
      [ inf   inf  inf     inf     inf  inf]    # 4
      [ inf   inf  inf     inf     inf  inf]]   # 5
+
+Especially for blocks the matrix representation uses a lot of unnecesary
+memory. This can be avoided by setting the ``compact`` argument to true:
+
+::
+
+    from dtaidistance import dtw
+    import numpy as np
+    series = np.array([
+         [0., 0, 1, 2, 1, 0, 1, 0, 0],
+         [0., 1, 2, 0, 0, 0, 0, 0, 0],
+         [1., 2, 0, 0, 0, 0, 0, 1, 1],
+         [0., 0, 1, 2, 1, 0, 1, 0, 0],
+         [0., 1, 2, 0, 0, 0, 0, 0, 0],
+         [1., 2, 0, 0, 0, 0, 0, 1, 1]])
+    ds = dtw.distance_matrix_fast(series, block=((1, 4), (3, 5)), compact=True)
+
+The result will now be:
+
+::
+
+    [1.4142  0.0000  2.2360  1.7320  1.4142]
+
 
 DTW based on shape (z-normalization)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
